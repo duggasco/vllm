@@ -141,6 +141,12 @@ class Qwen3ReasoningParser(BaseThinkingReasoningParser):
 
         if self.end_token in model_output:
             reasoning, _, content = model_output.partition(self.end_token)
+            # Promote any <tool_call> blocks embedded in reasoning into content
+            if reasoning and self._tool_call_tag in reasoning:
+                tool_idx = reasoning.find(self._tool_call_tag)
+                promoted = reasoning[tool_idx:]
+                reasoning = reasoning[:tool_idx].rstrip() or None
+                content = (promoted + (content or "")).strip() or None
             return reasoning, content or None
 
         if not self.thinking_enabled:
